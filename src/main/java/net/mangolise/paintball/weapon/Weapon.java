@@ -7,8 +7,6 @@ import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.particle.Particle;
 import net.minestom.server.tag.Tag;
-
-import static net.mangolise.paintball.weapon.HitRegisterer.*;
 import static net.mangolise.paintball.weapon.WeaponAction.*;
 
 import java.util.Locale;
@@ -17,8 +15,6 @@ public enum Weapon {
     FROUP_DE_FROUP(
         Component.text("Froup de Froup"),
         ItemStack.of(Material.FLINT_AND_STEEL),
-        clientSideHitScan(),
-
         new Actions.SetDamage(1.5),
 
         onHit(new Actions.HitscanParticle(Particle.FLAME, 2)),
@@ -33,7 +29,6 @@ public enum Weapon {
     RAILORD(
         Component.text("Railord"),
         ItemStack.of(Material.RAIL),
-        clientSideHitScan(),
 
         onHit(new Actions.HitscanParticle(Particle.SCULK_CHARGE, 0.75)),
         onMiss(new Actions.HitscanParticle(Particle.SMOKE, 0.1)),
@@ -68,34 +63,19 @@ public enum Weapon {
         // apply damage
         onHit(new Actions.ApplyDamage())
     ),
-    BOINK(
-        Component.text("Boink"),
-        ItemStack.of(Material.AZURE_BLUET),
-        basicSingleShot(0, 10.0),
-
-        onHit(new Actions.HitscanParticle(Particle.SCULK_CHARGE, 0.75)),
-        onMiss(new Actions.HitscanParticle(Particle.SMOKE, 0.1)),
-
-        onHit(new Actions.Knockback(Actions.Knockback.Target.SELF_AND_TARGET)),
-        onMiss(new Actions.Knockback(Actions.Knockback.Target.SELF_AND_TARGET)),
-
-        onHit(new Actions.ApplyDamage())
-    )
     ;
 
     private final Component displayName;
     private final ItemStack displayItem;
-    private final HitRegisterer hitreg;
     private final WeaponAction action;
 
     private static final Tag<String> WEAPON_ID_TAG = Tag.String("weaponId");
 
-    Weapon(Component displayName, ItemStack stack, HitRegisterer hitreg, WeaponAction... action) {
+    Weapon(Component displayName, ItemStack stack, WeaponAction... action) {
         this.displayName = displayName;
         this.displayItem = stack
                 .withCustomName(displayName)
                 .withTag(Tag.String("weaponId"), name().toLowerCase(Locale.ROOT));
-        this.hitreg = hitreg;
         this.action = join(action);
     }
 
@@ -109,10 +89,6 @@ public enum Weapon {
 
     public ItemStack displayItem() {
         return displayItem;
-    }
-
-    public HitRegisterer hitreg() {
-        return hitreg;
     }
 
     public WeaponAction action() {
