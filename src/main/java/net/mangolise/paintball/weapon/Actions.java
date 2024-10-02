@@ -3,9 +3,12 @@ package net.mangolise.paintball.weapon;
 import net.kyori.adventure.sound.Sound;
 import net.mangolise.paintball.util.PaintballUtils;
 import net.minestom.server.coordinate.Vec;
+import net.minestom.server.entity.Player;
 import net.minestom.server.entity.damage.Damage;
 import net.minestom.server.network.packet.server.play.ParticlePacket;
 import net.minestom.server.particle.Particle;
+import net.minestom.server.tag.Tag;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
@@ -40,6 +43,54 @@ public interface Actions {
         @Override
         public void execute(Context context) {
             PaintballUtils.setWeaponCooldown(context.player(), seconds);
+        }
+    }
+
+    record Knockback(Target target) implements WeaponAction {
+
+        @ApiStatus.Internal
+        public static final Tag<Boolean> KNOCKED = Tag.Boolean("knocked");
+
+        @Override
+        public void execute(Context context) {
+            final double gravity = 9.81; // Player#getAerodynamics#gravity returns zero because player movement is calculated on the client side. Minestom bug or intended behavior?
+            Vec knockbackDirection = context.eyePosition().sub(context.hitPosition()).asVec().normalize(); // away from the hit direction
+
+            Player player = context.player();
+            if (target.affectsSelf() && (!player.hasTag(KNOCKED) || !player.getTag(KNOCKED))) {
+                Vec initialVelocity = player.getVelocity();
+                player.setVelocity(initialVelocity.sub(0, initialVelocity.y(), 0).add(knockbackDirection.mul(gravity / ((context instanceof HitPlayerContext) ? 2 : 1))));
+                player.setTag(KNOCKED, true);
+            }
+
+            if (target.affectsTarget() && context instanceof HitPlayerContext hitContext) {
+                Player target = hitContext.target();
+                Vec targetInitialVelocity = target.getVelocity();
+                target.setVelocity(targetInitialVelocity.add(knockbackDirection.neg().mul(gravity / 2)));
+            }
+        }
+
+        enum Target {
+            SELF(true, false),
+            TARGET(false, true),
+            SELF_AND_TARGET(true, true),
+            ;
+
+            private boolean affectsSelf;
+            private boolean affectsTarget;
+
+            Target(boolean affectsSelf, boolean affectsTarget) {
+                this.affectsSelf = affectsSelf;
+                this.affectsTarget = affectsTarget;
+            }
+
+            public boolean affectsSelf() {
+                return affectsSelf;
+            }
+
+            public boolean affectsTarget() {
+                return affectsTarget;
+            }
         }
     }
 

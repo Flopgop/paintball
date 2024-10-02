@@ -10,6 +10,7 @@ import net.minestom.server.tag.Tag;
 import java.util.List;
 import java.util.stream.Stream;
 
+@SuppressWarnings("UnstableApiUsage")
 public class PaintballUtils {
 
     /** Unix timestamp in milliseconds */

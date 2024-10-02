@@ -5,8 +5,6 @@ import net.mangolise.gamesdk.util.GameSdkUtils;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Player;
 import net.minestom.server.extras.bungee.BungeeCordProxy;
-import net.minestom.server.registry.DynamicRegistry;
-import net.minestom.server.world.DimensionType;
 
 import java.util.List;
 

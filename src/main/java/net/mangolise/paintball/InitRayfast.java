@@ -8,6 +8,11 @@ import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
+import net.minestom.server.entity.EntityType;
+import net.minestom.server.entity.metadata.display.BlockDisplayMeta;
+import net.minestom.server.instance.block.Block;
+
+import java.time.Duration;
 
 public class InitRayfast {
 
@@ -19,6 +24,15 @@ public class InitRayfast {
         Area3d.CONVERTER.register(Entity.class, entity -> {
             Point position = entity.getPosition();
             BoundingBox boundingBox = entity.getBoundingBox();
+            // debug tool
+            Entity entity1 = new Entity(EntityType.BLOCK_DISPLAY);
+            entity1.editEntityMeta(BlockDisplayMeta.class, m -> {
+                m.setBlockState(Block.GLOWSTONE);
+                m.setTranslation(position.add(boundingBox.minX(), boundingBox.minY(), boundingBox.minZ()));
+                m.setScale(new Vec(Math.abs(boundingBox.minX()) + Math.abs(boundingBox.maxX()), Math.abs(boundingBox.minY()) + Math.abs(boundingBox.maxY()), Math.abs(boundingBox.minZ()) + Math.abs(boundingBox.maxZ())));
+            });
+            entity1.setInstance(entity.getInstance());
+            entity1.scheduleRemove(Duration.ofSeconds(5));
             return Area3d.CONVERTER.from(boundingBox.withOffset(position));
         });
 
