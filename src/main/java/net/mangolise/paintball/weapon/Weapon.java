@@ -3,6 +3,7 @@ package net.mangolise.paintball.weapon;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.minestom.server.coordinate.Vec;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.particle.Particle;
@@ -79,6 +80,14 @@ public enum Weapon {
         onHit(new Actions.Knockback(Actions.Knockback.Target.SELF_AND_TARGET)),
         onMiss(new Actions.Knockback(Actions.Knockback.Target.SELF_AND_TARGET)),
 
+        onHit(new Actions.ApplyDamage())
+    ),
+    PAINT_LOBBER(
+        Component.text("Paint Lobber"),
+        ItemStack.of(Material.SLIME_BALL),
+        projectile(new SlimeStickyProjectileBehavior(), 2, 4.0),
+
+        onHit(new Actions.RegionParticle(Particle.ITEM_SLIME, new Vec(-1,-1,-1), new Vec(1,1,1), 10)),
         onHit(new Actions.ApplyDamage())
     )
     ;

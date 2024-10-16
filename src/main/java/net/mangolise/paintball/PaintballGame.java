@@ -75,6 +75,7 @@ public class PaintballGame extends BaseGame<PaintballGame.Config> {
             player.getInventory().setItemStack(0, Weapon.FROUP_DE_FROUP.displayItem());
             player.getInventory().setItemStack(1, Weapon.RAILORD.displayItem());
             player.getInventory().setItemStack(2, Weapon.BOINK.displayItem());
+            player.getInventory().setItemStack(3, Weapon.PAINT_LOBBER.displayItem());
 
 //            player.eventNode().addListener(PlayerPacketEvent.class, event -> {
 //                ClientPacket packet = event.getPacket();

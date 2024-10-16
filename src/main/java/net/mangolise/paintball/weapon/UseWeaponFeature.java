@@ -44,12 +44,18 @@ public record UseWeaponFeature() implements Game.Feature<PaintballGame> {
             ) {
                 ItemStack item = player.getItemInHand(packet.hand());
                 Weapon weapon = Weapon.weaponFromItemStack(item);
-                List<HitResult> hits = weapon.hitreg().hit(new BasicHitRegistererContext(game, player));
-                hits.forEach(h -> {
-                    // TODO: if ever necessary, regular entity hitting can be implemented via this and a slight modification to the HitRegisterers
-                    if (!(h.hit() instanceof Player p)) weapon.action().execute(new PlayerMissWeaponContext(game, player, h.pos()));
-                    else weapon.action().execute(new PlayerHitPlayerWeaponContext(game, player, p, h.pos()));
-                });
+
+                if (!weapon.hitreg().delayedHitBehavior()) {
+                    List<HitResult> hits = weapon.hitreg().hits(new BasicHitRegistererContext(game, player));
+                    hits.forEach(h -> {
+                        // TODO: if ever necessary, regular entity hitting can be implemented via this and a slight modification to the HitRegisterers
+                        if (!(h.hit() instanceof Player p))
+                            weapon.action().execute(new PlayerMissWeaponContext(game, player, h.pos()));
+                        else weapon.action().execute(new PlayerHitPlayerWeaponContext(game, player, p, h.pos()));
+                    });
+                } else {
+                    weapon.hitreg().hits(new BasicHitRegistererContext(game, player)); // if implemented to spec this code is redundant, however to avoid bad implementations of HitRegisterer, we only call this here to prevent avoidable bugs.
+                }
             } else {
                 if (!(event.getPacket() instanceof ClientInteractEntityPacket packet)) return;
                 if (!(packet.type() instanceof ClientInteractEntityPacket.InteractAt entityInteractAt)) return;

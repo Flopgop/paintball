@@ -2,6 +2,7 @@ package net.mangolise.paintball.weapon;
 
 import net.kyori.adventure.sound.Sound;
 import net.mangolise.paintball.util.PaintballUtils;
+import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.damage.Damage;
@@ -43,6 +44,31 @@ public interface Actions {
         @Override
         public void execute(Context context) {
             PaintballUtils.setWeaponCooldown(context.player(), seconds);
+        }
+    }
+
+    record RegionParticle(Particle particle, Point min, Point max, int subdivisions) implements WeaponAction {
+
+        @Override
+        public void execute(Context context) {
+            Point start = context.hitPosition().add(min);
+            Point end = context.hitPosition().add(max);
+
+            double stepX = (end.x() - start.x()) / subdivisions;
+            double stepY = (end.y() - start.y()) / subdivisions;
+            double stepZ = (end.z() - start.z()) / subdivisions;
+
+            for (int x = 0; x < subdivisions; x++) {
+                for (int y = 0; y < subdivisions; y++) {
+                    for (int z = 0; z < subdivisions; z++) {
+                        double posX = start.x() + x * stepX;
+                        double posY = start.y() + y * stepY;
+                        double posZ = start.z() + z * stepZ;
+                        ParticlePacket packet = new ParticlePacket(particle, true, posX, posY, posZ, 0, 0, 0, 0, 1);
+                        context.instance().sendGroupedPacket(packet);
+                    }
+                }
+            }
         }
     }
 

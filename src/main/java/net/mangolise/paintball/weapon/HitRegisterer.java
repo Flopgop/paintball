@@ -4,14 +4,19 @@ import dev.emortal.rayfast.area.area3d.Area3d;
 import dev.emortal.rayfast.util.VectorMathUtil;
 import dev.emortal.rayfast.vector.Vector3d;
 import net.mangolise.paintball.PaintballGame;
+import net.mangolise.paintball.entity.BehavioralEntity;
+import net.mangolise.paintball.entity.EntityBehavior;
 import net.mangolise.paintball.util.VectorUtils;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
+import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.tag.Taggable;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,7 +25,18 @@ import java.util.Map;
 
 public interface HitRegisterer {
 
-    List<HitResult> hit(Context context);
+    /**
+     * Used to calculate all hits given the context.
+     *
+     * @param context the Hit context
+     * @return A list of hit results, the result of every single scan that was fired
+     * @implNote when {@link #delayedHitBehavior()} returns true, this will only be called once,
+     * and is expected to handle hits manually, and the output
+     */
+    @Contract("_ -> new")
+    @NotNull List<HitResult> hits(@NotNull Context context);
+    @Contract(pure = true)
+    boolean delayedHitBehavior();
 
     static HitRegisterer clientSideHitScan() {
         return new ClientSideHitScan();
@@ -34,25 +50,58 @@ public interface HitRegisterer {
         return new BasicSpreadShot(scatter, range, shots);
     }
 
+    static HitRegisterer projectile(EntityBehavior projectile, double projectileSpawnDistanceInFrontOfShooter, double projectileSpawningVelocity) {
+        return new ProjectileHitReg(projectile, projectileSpawnDistanceInFrontOfShooter, projectileSpawningVelocity);
+    }
+
     sealed interface Context extends Taggable permits BasicHitRegistererContext {
         PaintballGame game();
         Player shooter();
         Instance instance();
         Pos eyePos();
+        Weapon weapon();
+    }
+}
+
+record ProjectileHitReg(EntityBehavior projectileBehavior, double projectileSpawnDistanceInFrontOfShooter, double projectileSpawningVelocity) implements HitRegisterer {
+
+    @Override
+    public @NotNull List<HitResult> hits(@NotNull Context context) {
+        Instance instance = context.instance();
+        BehavioralEntity ent = new BehavioralEntity(projectileBehavior, context);
+        ent.setInstance(instance, context.eyePos().asVec().add(context.shooter().getPosition().direction().normalize().mul(projectileSpawnDistanceInFrontOfShooter)));
+        ent.setVelocity(context.shooter().getPosition().direction().normalize().mul(projectileSpawningVelocity));
+        // whatever happens from here is not our problem. The projectile has full control.
+        return List.of();
+    }
+
+    @Override
+    public boolean delayedHitBehavior() {
+        return true;
     }
 }
 
 record ClientSideHitScan() implements HitRegisterer {
     @Override
-    public List<HitResult> hit(Context context) {
+    public @NotNull List<HitResult> hits(@NotNull Context context) {
         throw new IllegalCallerException("ClientSideHitScan#hit is hardcoded in UseWeaponFeature!");
+    }
+
+    @Override
+    public boolean delayedHitBehavior() {
+        return false;
     }
 }
 
 record BasicSingleShot(double scatter, double range) implements HitRegisterer {
     @Override
-    public List<HitResult> hit(Context context) {
+    public @NotNull List<HitResult> hits(@NotNull Context context) {
         return singleShotScattered(context, scatter, range);
+    }
+
+    @Override
+    public boolean delayedHitBehavior() {
+        return false;
     }
 
     static List<HitResult> singleShotScattered(Context context, double scatter, double range) {
@@ -93,11 +142,16 @@ record BasicSingleShot(double scatter, double range) implements HitRegisterer {
 record BasicSpreadShot(double scatter, double range, int shots) implements HitRegisterer {
 
     @Override
-    public List<HitResult> hit(Context context) {
+    public @NotNull List<HitResult> hits(@NotNull Context context) {
         List<HitResult> hits = new ArrayList<>();
         for (int i = 0; i < shots; i++) {
             hits.addAll(BasicSingleShot.singleShotScattered(context, scatter, range));
         }
         return hits;
+    }
+
+    @Override
+    public boolean delayedHitBehavior() {
+        return false;
     }
 }

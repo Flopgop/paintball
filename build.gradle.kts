@@ -20,6 +20,9 @@ dependencies {
     implementation("net.minestom:minestom-snapshots:d0754f2a15")
     implementation("dev.hollowcube:polar:1.11.1")
     implementation("com.github.EmortalMC:Rayfast:7975ac5e4c")
+    implementation("com.github.Flopgop:BDStudio2POJO:07a26ca342")
+
+    implementation("org.joml:joml:1.10.8")
 }
 
 java {
